@@ -1,0 +1,43 @@
+.tab{
+ 
+  display: flex;
+  background: #ada7a7;
+  padding-bottom: 30px;
+  margin:auto;
+  height: 20px; 
+}
+.container1{
+  width:100%;
+  flex-direction: row;
+  justify-content: flex-start;
+    display: flex;
+    background: #fff;  
+    margin:auto;   
+  
+}
+.task {  
+  
+    max-width: 300px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .button{
+    width: 100px;
+  }
+
+
+  .logout{
+margin-left: auto;
+  }
+  /* .add {
+  display: flex;
+  } */
+
+  
+  
+  
+ 
+  
+  
+    
