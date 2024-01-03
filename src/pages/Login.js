@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import {useCookies} from "react-cookie";
 import "./Login.css";
 import axios from "axios";
 const Login = () => {
@@ -7,7 +8,7 @@ const Login = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+ const[Cookies,setCookie,removeCookie]=useCookies(null)
   const handleSubmit = async () => {
     try {
       console.log(name, email, password);
@@ -16,11 +17,17 @@ const Login = () => {
           name,
           email,
           password,
-        });
+        }).then(response =>{
+          setCookie("Email",email)
+          console.log(response.data.message);
+      });
         window.location.href = "/tasklist";
         // Handle successful signup
       } else if (action === "Sign In" && email != "" && password != "") {
-        await axios.post("http://localhost:5000/signin", { email, password });
+        await axios.post("http://localhost:5000/signin", { email, password }).then(response =>{
+          setCookie("Email",email)
+          console.log(response.data.message);
+      });
         // Handle successful signin
         window.location.href = "/tasklist";
       }

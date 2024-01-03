@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useCookies } from "react-cookie";
 import axios from "axios";
 import "./TaskList.css";
 import Login from "./Login";
@@ -23,6 +24,37 @@ const TaskList = () => {
   const [priority, setPriority] = useState("low");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
+  const [Cookies, setCookie, removeCookie] = useCookies(null);
+
+  const getData = async () => {
+    try {
+      if (Cookies.Email != null) {
+        const response = await fetch(
+          `http://localhost:5000/tasklist/${Cookies.Email}`
+        );
+        const json = await response.json();
+        console.log(json);
+        var fetchedTasks = [];
+        var newId = 1;
+        json.forEach((value) => {
+          fetchedTasks.push({
+            id: newId,
+            name: value.task,
+            priority: value.priority,
+            completed: value.status,
+          });
+          newId++;
+        });
+        setTasks(fetchedTasks);
+      }
+    } catch (err) {
+      console.log("error");
+    }
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
 
   const addTask = () => {
     const task = {
@@ -42,8 +74,9 @@ const TaskList = () => {
     );
   };
 
-  const deleteTask = (id) => {
+  const deleteTask = (id, name) => {
     setTasks(tasks.filter((task) => task.id !== id));
+    handleDelete(name);
   };
 
   const markAsCompleted = (id, name) => {
@@ -60,6 +93,7 @@ const TaskList = () => {
     );
 
   const handleLogout = () => {
+    removeCookie("Email");
     window.location.href = "/";
   };
 
@@ -70,13 +104,16 @@ const TaskList = () => {
       completed: false,
     };
     try {
-      const response = await fetch("http://localhost:5000/tasklist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(task),
-      });
+      const response = await fetch(
+        `http://localhost:5000/tasklist/${Cookies.Email}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(task),
+        }
+      );
       if (response.ok) {
         console.log("Data successfully posted to the server!");
       } else {
@@ -90,7 +127,7 @@ const TaskList = () => {
   const handleUpdateStatus = async (name) => {
     try {
       const response = await fetch(
-        "http://localhost:5000/tasklist/analiya@gmail.com",
+        `http://localhost:5000/tasklist/${Cookies.Email}`,
         {
           method: "PUT",
           headers: {
@@ -106,6 +143,24 @@ const TaskList = () => {
       }
     } catch (error) {
       console.error("Error:", error);
+    }
+  };
+
+  const handleDelete = async (task) => {
+    try {
+      const response = await fetch(`http://localhost:5000/tasklist/${task}/${Cookies.Email}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        console.log("task deleted successfully!");
+      } else {
+        console.error("Failed to delete task.");
+      }
+    } catch (err) {
+      console.log("error");
     }
   };
 
@@ -193,7 +248,9 @@ const TaskList = () => {
 
               <td>
                 {" "}
-                <button onClick={() => deleteTask(task.id)}>Delete</button>
+                <button onClick={() => deleteTask(task.id, task.name)}>
+                  Delete
+                </button>
               </td>
               {!task.completed && (
                 <td>
