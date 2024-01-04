@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useCookies } from "react-cookie";
+import { useNavigate } from "react-router-dom";
+// import { useCookies } from "react-cookie";
 import axios from "axios";
 import "./TaskList.css";
-import Login from "./Login";
+
 const TaskList = () => {
+  const history = useNavigate();
+
+  useEffect(() => {
+    const userEmail = localStorage.getItem("Email");
+
+    if (!userEmail) {
+      // If Email is null, redirect to the login page
+      history("/");
+    }
+  }, [history]);
+
   // const TaskList = async (username, password) => {
   //   try {
   //     const response = await axios.post("http://localhost:5000/tasks", {
@@ -24,43 +36,56 @@ const TaskList = () => {
   const [priority, setPriority] = useState("low");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
-  const [Cookies, setCookie, removeCookie] = useCookies(null);
+  // const [Cookies, setCookie, removeCookie] = useCookies(null);
+  const userEmail = localStorage.getItem("Email");
 
   const getData = async () => {
     try {
-      if (Cookies.Email != null) {
-        const response = await fetch(
-          `http://localhost:5000/tasklist/${Cookies.Email}`
+      // if (Cookies.Email != null)
+      if (userEmail != null) {
+        const response = await axios.get(
+          `http://localhost:5000/tasklist/${userEmail}`
         );
-        const json = await response.json();
+
+        const json = response.data;
         console.log(json);
         var fetchedTasks = [];
         var newId = 1;
         json.forEach((value) => {
+          var taskCompleted = false;
+          if (value.status == "true") {
+            taskCompleted = true;
+          }
+
           fetchedTasks.push({
             id: newId,
             name: value.task,
             priority: value.priority,
-            completed: value.status,
+            completed: taskCompleted,
           });
           newId++;
         });
         setTasks(fetchedTasks);
       }
+
+      if (userEmail == "") {
+        window.location.href = "/";
+      }
     } catch (err) {
-      console.log("error");
+      console.error("Error:", err);
     }
   };
 
   useEffect(() => {
     getData();
+    console.log("useeffect");
   }, []);
 
   const addTask = () => {
     const task = {
       id: tasks.length + 1,
       name: newTask,
-      priority,
+      priority: priority,
       completed: false,
     };
 
@@ -93,7 +118,8 @@ const TaskList = () => {
     );
 
   const handleLogout = () => {
-    removeCookie("Email");
+    // removeCookie("Email");
+    localStorage.removeItem("Email");
     window.location.href = "/";
   };
 
@@ -104,17 +130,16 @@ const TaskList = () => {
       completed: false,
     };
     try {
-      const response = await fetch(
-        `http://localhost:5000/tasklist/${Cookies.Email}`,
+      const response = await axios.post(
+        `http://localhost:5000/tasklist/${userEmail}`,
+        task,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(task),
         }
       );
-      if (response.ok) {
+      if (response.status === 201) {
         console.log("Data successfully posted to the server!");
       } else {
         console.error("Failed to post data to the server");
@@ -126,17 +151,19 @@ const TaskList = () => {
 
   const handleUpdateStatus = async (name) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/tasklist/${Cookies.Email}`,
+      const response = await axios.put(
+        `http://localhost:5000/tasklist/${userEmail}`,
         {
-          method: "PUT",
+          completed: true,
+          name,
+        },
+        {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ completed: "true", name }),
         }
       );
-      if (response.ok) {
+      if (response.status === 200) {
         console.log("Status updated successfully!");
       } else {
         console.error("Failed to update status.");
@@ -148,19 +175,22 @@ const TaskList = () => {
 
   const handleDelete = async (task) => {
     try {
-      const response = await fetch(`http://localhost:5000/tasklist/${task}/${Cookies.Email}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
+      const response = await axios.delete(
+        `http://localhost:5000/tasklist/${task}/${userEmail}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
         console.log("task deleted successfully!");
       } else {
         console.error("Failed to delete task.");
       }
     } catch (err) {
-      console.log("error");
+      console.error("Error:", err);
     }
   };
 
