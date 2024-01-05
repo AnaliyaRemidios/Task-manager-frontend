@@ -1,74 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// import { useCookies } from "react-cookie";
 import axios from "axios";
 import "./TaskList.css";
 
 const TaskList = () => {
   const history = useNavigate();
-
   useEffect(() => {
     const userEmail = localStorage.getItem("Email");
-
     if (!userEmail) {
-      // If Email is null, redirect to the login page
       history("/");
     }
   }, [history]);
-
-  // const TaskList = async (username, password) => {
-  //   try {
-  //     const response = await axios.post("http://localhost:5000/tasks", {
-  //       username,
-  //       password,
-  //     });
-  //     const { token } = response.data;
-  //     console.log("Sign-in successful! Token:", token);
-  //   } catch (error) {
-  //     console.error(
-  //       "Error during sign-in:",
-  //       error.response?.data?.error || "Unknown error"
-  //     );
-  //   }
-  // };
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [priority, setPriority] = useState("low");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
-  // const [Cookies, setCookie, removeCookie] = useCookies(null);
   const userEmail = localStorage.getItem("Email");
 
   const getData = async () => {
     try {
-      // if (Cookies.Email != null)
       if (userEmail != null) {
         const response = await axios.get(
           `http://localhost:5000/tasklist/${userEmail}`
         );
-
         const json = response.data;
         console.log(json);
         var fetchedTasks = [];
-        var newId = 1;
+
         json.forEach((value) => {
           var taskCompleted = false;
-          if (value.status == "true") {
+          if (value.status === "true") {
             taskCompleted = true;
           }
-
           fetchedTasks.push({
-            id: newId,
+            id: value.id,
             name: value.task,
             priority: value.priority,
             completed: taskCompleted,
           });
-          newId++;
         });
         setTasks(fetchedTasks);
       }
-
-      if (userEmail == "") {
+      if (userEmail === "") {
         window.location.href = "/";
       }
     } catch (err) {
@@ -81,44 +55,23 @@ const TaskList = () => {
     console.log("useeffect");
   }, []);
 
-  const addTask = () => {
-    const task = {
-      id: tasks.length + 1,
-      name: newTask,
-      priority: priority,
-      completed: false,
-    };
-
-    setTasks([...tasks, task]);
-    setNewTask("");
-  };
-
   const updateTask = (id, updatedTask) => {
     setTasks(
       tasks.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
     );
   };
 
-  const deleteTask = (id, name) => {
+  const deleteTask = (id) => {
     setTasks(tasks.filter((task) => task.id !== id));
-    handleDelete(name);
+    handleDelete(id);
   };
 
-  const markAsCompleted = (id, name) => {
+  const markAsCompleted = (id) => {
     updateTask(id, { completed: true });
-    handleUpdateStatus(name);
+    handleUpdateStatus(id);
   };
-
-  const filteredTasks = tasks
-    .filter((task) =>
-      task.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((task) =>
-      filterPriority ? task.priority === filterPriority : true
-    );
 
   const handleLogout = () => {
-    // removeCookie("Email");
     localStorage.removeItem("Email");
     window.location.href = "/";
   };
@@ -139,8 +92,9 @@ const TaskList = () => {
           },
         }
       );
-      if (response.status === 201) {
+      if (response.status === 200) {
         console.log("Data successfully posted to the server!");
+        getData();
       } else {
         console.error("Failed to post data to the server");
       }
@@ -149,13 +103,13 @@ const TaskList = () => {
     }
   };
 
-  const handleUpdateStatus = async (name) => {
+  const handleUpdateStatus = async (id) => {
     try {
       const response = await axios.put(
         `http://localhost:5000/tasklist/${userEmail}`,
         {
           completed: true,
-          name,
+          id,
         },
         {
           headers: {
@@ -173,10 +127,10 @@ const TaskList = () => {
     }
   };
 
-  const handleDelete = async (task) => {
+  const handleDelete = async (id) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/tasklist/${task}/${userEmail}`,
+        `http://localhost:5000/tasklist/${userEmail}/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -194,8 +148,32 @@ const TaskList = () => {
     }
   };
 
+  const searchTask = async () => {
+    const response = await axios.get(
+      `http://localhost:5000/tasklist/${userEmail}/search?task=${searchTerm}&priority=${filterPriority}`
+    );
+
+    const json = response.data;
+    console.log(json);
+    var fetchedTasks = [];
+
+    json.forEach((value) => {
+      var taskCompleted = false;
+      if (value.status === "true") {
+        taskCompleted = true;
+      }
+      fetchedTasks.push({
+        id: value.id,
+        name: value.task,
+        priority: value.priority,
+        completed: taskCompleted,
+      });
+    });
+
+    setTasks(fetchedTasks);
+  };
+
   const handleButton = () => {
-    addTask();
     handlePostTask();
   };
 
@@ -210,7 +188,6 @@ const TaskList = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </label>
-
         <label>
           Filter Priority:
           <select
@@ -223,12 +200,11 @@ const TaskList = () => {
             <option value="High">High</option>
           </select>
         </label>
-
+        <button onClick={searchTask}>Search</button>
         <div className="logout">
           <button onClick={handleLogout}>Logout</button>
         </div>
       </div>
-
       <div className="task">
         <h1>Add Your Task</h1>
       </div>
@@ -241,7 +217,6 @@ const TaskList = () => {
             onChange={(e) => setNewTask(e.target.value)}
           />
         </label>
-
         <label>
           Priority:
           <select
@@ -253,12 +228,10 @@ const TaskList = () => {
             <option value="High">High</option>
           </select>
         </label>
-
         <button type="button" className="button" onClick={handleButton}>
           Add Task
         </button>
       </form>
-
       <table border={1}>
         <thead>
           <tr>
@@ -270,22 +243,19 @@ const TaskList = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredTasks.map((task) => (
+          {tasks.map((task) => (
             <tr key={task.id}>
               <td colSpan="3">{task.name} </td>
               <td>{task.priority}</td>
               <td> {task.completed ? "Completed" : "Not Completed"} </td>
-
               <td>
                 {" "}
-                <button onClick={() => deleteTask(task.id, task.name)}>
-                  Delete
-                </button>
+                <button onClick={() => deleteTask(task.id)}>Delete</button>
               </td>
               {!task.completed && (
                 <td>
                   {" "}
-                  <button onClick={() => markAsCompleted(task.id, task.name)}>
+                  <button onClick={() => markAsCompleted(task.id)}>
                     Mark as Completed
                   </button>
                 </td>
@@ -297,6 +267,4 @@ const TaskList = () => {
     </div>
   );
 };
-
 export default TaskList;
-// - Priority: {task.priority}

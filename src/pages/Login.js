@@ -1,50 +1,38 @@
 import React, { useState } from "react";
-// import {useCookies} from "react-cookie";
 import "./Login.css";
 import axios from "axios";
 const Login = () => {
   const [action, setAction] = useState("Sign In");
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-//  const[Cookies,setCookie,removeCookie]=useCookies(null)
+
 const handleStorage=(email)=>{
   localStorage.setItem("Email",email);
 };
   const handleSubmit = async () => {
     try {
       console.log(name, email, password);
-      if (action === "Sign Up" && name != "" && email != "" && password != "") {
+      if (action === "Sign Up" && name !== "" && email !== "" && password !== "") {
         await axios.post("http://localhost:5000/signup", {
           name,
           email,
           password,
-        }).then(response =>{
-         
+        }).then(response =>{      
           handleStorage(email);
           console.log(response.data.message);
       });
         window.location.href = "/tasklist";
-        // Handle successful signup
-      } else if (action === "Sign In" && email != "" && password != "") {
+      } else if (action === "Sign In" && email !== "" && password !== "") {
         await axios.post("http://localhost:5000/signin", { email, password }).then(response =>{
-          // setCookie("Email",email)
           handleStorage(email);
           console.log(response.data.message);
       });
-        // Handle successful signin
         window.location.href = "/tasklist";
       }
-
-      //  else {
-      //   await axios.post("http://localhost:5000/signin", { email, password });
-      //   // Handle successful signin
-      // }
     } catch (error) {
       console.error("API Error:", error);
       alert("Sign In error");
-      // Handle error
     }
   };
 
@@ -54,7 +42,6 @@ const handleStorage=(email)=>{
         <div className="text">{action}</div>
         <div className="underline"></div>
       </div>
-
       <div className="inputs">
         {action === "Sign In" ? (
           <div></div>
@@ -98,8 +85,7 @@ const handleStorage=(email)=>{
             onClick={() => {
               setAction("Sign Up");
               handleSubmit();
-            }}
-          >
+            }}  >
             Sign Up
           </div>
           <div
@@ -107,8 +93,7 @@ const handleStorage=(email)=>{
             onClick={() => {
               setAction("Sign In");
               handleSubmit();
-            }}
-          >
+            }}    >
             Sign In
           </div>
         </div>
@@ -116,5 +101,4 @@ const handleStorage=(email)=>{
     </div>
   );
 };
-
 export default Login;
